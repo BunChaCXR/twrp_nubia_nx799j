@@ -1,0 +1,45 @@
+# Android fstab file.
+# Device: Nubia RedMagic 11 Air (NX799J)
+# Platform: Snapdragon 8 Elite (sun) / Android 16 (API 36)
+# Encryption: f2fs userdata, inlinecrypt_optimized, fscrypt v2 + wrappedkey_v0, metadata_encryption wrappedkey_v0
+#
+# Local source fstab: /vendor/etc/fstab.qcom (collected 2026-10-23)
+# Logical group: qti_dynamic_partitions_a/b — members: odm product system system_dlkm system_ext vendor vendor_dlkm
+# This device has a microSD slot (8804000.sdhci) and USB OTG.
+
+#<src>                                                   <mnt_point>          <type>  <mnt_flags and options>                                                                                                                       <fs_mgr_flags>
+
+# Logical Partitions (Super)
+system                                                   /system              erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey:/avb/t-gsi.avbpubkey:/avb/u-gsi.avbpubkey:/avb/v-gsi.avbpubkey
+system                                                   /system              ext4    ro,barrier=1,discard                                                                                                                         wait,slotselect,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey:/avb/t-gsi.avbpubkey:/avb/u-gsi.avbpubkey:/avb/v-gsi.avbpubkey
+system_ext                                               /system_ext          erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
+product                                                  /product             erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
+vendor                                                   /vendor              erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta,logical,first_stage_mount
+vendor_dlkm                                              /vendor_dlkm         erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta,logical,first_stage_mount
+system_dlkm                                              /system_dlkm         erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta,logical,first_stage_mount
+odm                                                      /odm                 erofs   ro                                                                                                                                           wait,slotselect,avb=vbmeta,logical,first_stage_mount
+
+# Physical Boot Partitions
+/dev/block/bootdevice/by-name/boot                       /boot                emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/init_boot                  /init_boot           emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/vendor_boot                /vendor_boot         emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/recovery                   /recovery            emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/dtbo                       /dtbo                emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/misc                      /misc                emmc     defaults                                                                                                                                   defaults
+/dev/block/bootdevice/by-name/frp                        /persistent          emmc     defaults                                                                                                                                   defaults
+
+# Metadata (must mount before /data for wrappedkey derivation)
+# Local metadata fstab entry carries no wrappedkey flag; wrappedkey state lives on userdata.
+/dev/block/bootdevice/by-name/metadata                   /metadata            f2fs     noatime,nosuid,nodev,discard                                                                                                               wait,check,formattable,first_stage_mount
+
+# Userdata (inline crypto, fscrypt v2 + wrappedkey_v0, metadata encryption wrappedkey_v0)
+/dev/block/bootdevice/by-name/userdata                  /data                f2fs     noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt                                              latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,metadata_encryption=aes-256-xts:wrappedkey_v0,quota,reservedsize=128M,sysfs_path=/sys/devices/platform/soc/1d84000.ufshc,checkpoint=fs
+
+# Firmware and Persist
+# Local live system mounts modem at /vendor/firmware_mnt; recovery init rc bind/symlinks /firmware to it.
+/dev/block/bootdevice/by-name/modem                      /firmware            vfat     ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0                                               wait,slotselect
+/dev/block/bootdevice/by-name/persist                    /mnt/vendor/persist  ext4     noatime,nosuid,nodev,barrier=1                                                                                                              wait,check,formattable
+
+# Removable Storage: microSD on 8804000.sdhci; USB OTG on any dwc3 node
+/devices/platform/soc/8804000.sdhci/mmc_host*           /storage/sdcard1     vfat     nosuid,nodev                                                                                                                               wait,voldmanaged=sdcard1:auto,encryptable=footer
+/devices/platform/soc/*.ssusb/*.dwc3/xhci-hcd.*.auto*   /storage/usbotg      vfat     nosuid,nodev                                                                                                                               wait,voldmanaged=usbotg:auto

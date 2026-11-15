@@ -1,0 +1,41 @@
+# Android fstab file.
+# The filesystem that contains the filesystem checker binary (typically /system) cannot
+# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+
+# mount point          fstype  device                                     device2                 flags
+
+# Logical partitions (super group: qti_dynamic_partitions; no odm_dlkm on NX799J)
+/system                 erofs   system                                                             flags=display="System"
+/system_ext             erofs   system_ext                                                         flags=display="System_EXT"
+/product               erofs   product                                                            flags=display="Product"
+/vendor                 erofs   vendor                                                             flags=display="Vendor"
+/vendor_dlkm           erofs   vendor_dlkm                                                        flags=display="Vendor_DLKM"
+/system_dlkm            erofs   system_dlkm                                                        flags=display="System_DLKM"
+/odm                    erofs   odm                                                                flags=display="ODM"
+
+# Metadata/Misc Properties
+/metadata               f2fs    /dev/block/bootdevice/by-name/metadata                             flags=display="Metadata";backup=1
+/misc                   emmc    /dev/block/bootdevice/by-name/misc                                 flags=display="Misc";backup=1;flashimg=1
+
+# Boot Properties
+/boot                   emmc    /dev/block/bootdevice/by-name/boot                                 flags=display="Boot";backup=1;slotselect;flashimg=1
+/init_boot              emmc    /dev/block/bootdevice/by-name/init_boot                            flags=display="Init Boot";backup=1;slotselect;flashimg=1
+/vendor_boot            emmc    /dev/block/bootdevice/by-name/vendor_boot                          flags=display="Vendor Boot";backup=1;slotselect;flashimg=1
+/dtbo                   emmc    /dev/block/bootdevice/by-name/dtbo                                 flags=display="DTBO";backup=1;slotselect;flashimg=1
+/recovery               emmc    /dev/block/bootdevice/by-name/recovery                             flags=display="Recovery";backup=1;slotselect;flashimg=1
+
+# AVB partitions
+/vbmeta                 emmc    /dev/block/bootdevice/by-name/vbmeta                               flags=display="VBMeta";backup=1;slotselect;flashimg=1
+/vbmeta_system          emmc    /dev/block/bootdevice/by-name/vbmeta_system                        flags=display="VBMeta System";backup=1;slotselect;flashimg=1
+
+# Persistent Properties
+/mnt/vendor/persist     ext4    /dev/block/bootdevice/by-name/persist                            flags=display="Persist"
+/persist_image          emmc    /dev/block/bootdevice/by-name/persist                            flags=display="Persist";backup=1;flashimg=1
+
+# Firmware Partitions
+/firmware               vfat    /dev/block/bootdevice/by-name/modem                                flags=display="Modem Firmware";slotselect;fsflags="ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0"
+/firmware_image         emmc    /dev/block/bootdevice/by-name/modem                                flags=display="Modem Firmware";slotselect;backup=1;flashimg=1
+
+# Removable Storage: microSD on 8804000.sdhci; USB OTG on any dwc3 node
+/storage/sdcard1        vfat    /devices/platform/soc/8804000.sdhci/mmc_host*                     flags=display="SD Card";storage;wipeingui;removable
+/storage/usbotg         auto    /devices/platform/soc/*.ssusb/*.dwc3/xhci-hcd.*.auto*              flags=display="USB-OTG";storage;wipeingui;removable

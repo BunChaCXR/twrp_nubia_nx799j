@@ -1,0 +1,18 @@
+# ADB
+ro.adb.secure=0
+ro.boot.dynamic_partitions=true
+
+# Gatekeeper
+# Local vendor rc: vendor.gatekeeper_default starts on property vendor.gatekeeper.is_security_level_spu=0.
+# Keep the non-SPU qti gatekeeper enabled for the recovery decrypt chain.
+# If SPU-backed gatekeeper/keymint is required in a later pass, replace with spu-qti binaries and services.
+vendor.gatekeeper.is_security_level_spu=0
+# vendor.gatekeeper.disable_spu=true
+
+# Battery Property
+ro.charger.enable_suspend=1
+
+# USB
+vendor.usb.configfs=1
+vendor.usb.rps_mask=0
+vendor.usb.uvc.function.init=1

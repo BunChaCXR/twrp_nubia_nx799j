@@ -1,0 +1,174 @@
+name: TWRP 16 Builder - NX799J (RedMagic 11 Air)
+
+on:
+  workflow_dispatch:
+    inputs:
+      TWRP_MANIFEST_URL:
+        description: "TWRP manifest url"
+        required: true
+        default: "https://github.com/TWRP-Test/platform_manifest_twrp_aosp"
+      TWRP_MANIFEST_BRANCH:
+        description: "TWRP branch"
+        required: true
+        default: "twrp-16.0"
+      DEVICE_TREE_URL:
+        description: "Device tree url (leave placeholder to use this repository itself)"
+        required: true
+        default: "https://github.com/your-account/twrp_device_nubia_nx799j"
+      DEVICE_TREE_BRANCH:
+        description: "Device tree branch"
+        required: true
+        default: "main"
+      DEVICE_PATH:
+        description: "Device path under device/"
+        required: true
+        default: "nubia/NX799J"
+      DEVICE_NAME:
+        description: "Device product name"
+        required: true
+        default: "NX799J"
+      LUNCH_TARGET:
+        description: "lunch suffix after twrp_ (default same as device name)"
+        required: false
+        default: "NX799J"
+      BUILD_PARTITION:
+        description: "Build partition"
+        required: true
+        default: "recovery"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - name: Show build info
+      run: |
+        if [ -n "${{ github.event.inputs.LUNCH_TARGET }}" ]; then
+          echo "LUNCH_TARGET=${{ github.event.inputs.LUNCH_TARGET }}" >> "$GITHUB_ENV"
+        else
+          echo "LUNCH_TARGET=${{ github.event.inputs.DEVICE_NAME }}" >> "$GITHUB_ENV"
+        fi
+        {
+          echo 'BUILD_INFO<<EOF'
+          echo
+          echo Device: RedMagic 11 Air (NX799J), sun / SM8750, Android 16 (API 36)
+          echo Manifest url: ${{ github.event.inputs.TWRP_MANIFEST_URL }}
+          echo Manifest branch: ${{ github.event.inputs.TWRP_MANIFEST_BRANCH }}
+          echo Device tree url: ${{ github.event.inputs.DEVICE_TREE_URL }}
+          echo Device tree branch: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}
+          echo Device path: ${{ github.event.inputs.DEVICE_PATH }}
+          echo Device name: ${{ github.event.inputs.DEVICE_NAME }}
+          echo Lunch target: twrp_${{ env.LUNCH_TARGET }}
+          echo Build target: ${{ github.event.inputs.BUILD_PARTITION }}.img
+          echo Build date: `date`
+          echo
+          echo EOF
+        } >> "$GITHUB_ENV"
+        echo BUILD_DATE=`date +%F` >> "$GITHUB_ENV"
+
+    - name: Cleanup large pre-installed toolchains
+      uses: rokibhasansagar/slimhub_actions@main
+
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 2048
+        swap-size-mb: 10240
+
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        create-symlink: true
+
+    - name: Setup zram
+      run: |
+        sudo apt install linux-modules-extra-$(uname -r) zram-tools -y || true
+        sudo modprobe zram || true
+        sudo sed -i 's/^#PERCENT=50/PERCENT=90/' /etc/default/zramswap
+        sudo sed -i 's/^#PRIORITY=100/PRIORITY=1000/' /etc/default/zramswap
+        sudo systemctl restart zramswap || true
+        zramctl
+
+    - name: Setup build environment
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt update
+        sudo apt install -y repo git python3 openjdk-17-jdk build-essential \
+          libncurses-dev flex bison gperf libssl-dev libxml2-utils \
+          zip unzip ccache cpio lz4 bc
+        git config --global user.name ${{ github.actor }}
+        git config --global user.email ${{ github.actor }}@users.noreply.github.com
+
+    - name: Sync TWRP source
+      run: |
+        repo init -u ${{ github.event.inputs.TWRP_MANIFEST_URL }} \
+          -b ${{ github.event.inputs.TWRP_MANIFEST_BRANCH }} --depth=1
+        (while true; do echo "Syncing source..."; sleep 60; done) &
+        TIP_PID=$!
+        repo sync -j4 --force-sync
+        kill $TIP_PID || true
+
+    - name: Place device tree
+      run: |
+        TREE_URL="${{ github.event.inputs.DEVICE_TREE_URL }}"
+        # Auto-fallback: if the input still holds the placeholder, use this repo itself.
+        if [ -z "$TREE_URL" ] || echo "$TREE_URL" | grep -q "your-account"; then
+          TREE_URL="https://github.com/${{ github.repository }}"
+        fi
+        TREE_BRANCH="${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
+        mkdir -p "device/${{ github.event.inputs.DEVICE_PATH }}"
+        git clone "$TREE_URL" -b "$TREE_BRANCH" "device/${{ github.event.inputs.DEVICE_PATH }}" \
+          || git clone "$TREE_URL" "device/${{ github.event.inputs.DEVICE_PATH }}"
+        ls -l "device/${{ github.event.inputs.DEVICE_PATH }}"/BoardConfig.mk
+
+    - name: Generate build info
+      run: |
+        echo -e "$BUILD_INFO" >> INFO.txt
+        echo "Change log:" >> INFO.txt
+        set +e
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
+        if [ $? -eq 0 ]; then
+          git log "$LAST_TAG"..HEAD --pretty=format:"- %h-%an: %s" >> INFO.txt
+        else
+          git log --pretty=format:"- %h-%an: %s" >> INFO.txt
+        fi
+        cat INFO.txt
+      working-directory: device/${{ github.event.inputs.DEVICE_PATH }}
+
+    - name: Build TWRP recovery image
+      run: |
+        source build/envsetup.sh
+        export ALLOW_MISSING_DEPENDENCIES=true
+        export CCACHE_DIR=.ccache
+        export CCACHE_EXEC=$(command -v ccache)
+        export CCACHE_MAXSIZE=5G
+        export USE_CCACHE=1
+        lunch twrp_${{ env.LUNCH_TARGET }}
+        (while true; do echo `date +%T` "Building TWRP..."; free -h; sleep 10; done) &
+        TIP_PID=$!
+        m ${{ github.event.inputs.BUILD_PARTITION }}image
+        BUILT="out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_PARTITION }}.img"
+        FINAL="out/target/product/${{ github.event.inputs.DEVICE_NAME }}/TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}.img"
+        cp "$BUILT" "$FINAL"
+        ls -lh "$FINAL"
+        kill $TIP_PID || true
+
+    - name: Upload build artifact (always downloadable from Actions)
+      uses: actions/upload-artifact@v4
+      with:
+        name: TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}
+        path: out/target/product/${{ github.event.inputs.DEVICE_NAME }}/TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}.img
+        if-no-files-found: error
+
+    - name: Publish GitHub Release
+      if: success()
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          out/target/product/${{ github.event.inputs.DEVICE_NAME }}/TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}.img
+        name: TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}-${{ github.run_id }}
+        tag_name: ${{ env.BUILD_DATE }}-${{ github.run_id }}
+        body_path: device/${{ github.event.inputs.DEVICE_PATH }}/INFO.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
