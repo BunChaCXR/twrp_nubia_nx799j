@@ -52,16 +52,16 @@ jobs:
         {
           echo 'BUILD_INFO<<EOF'
           echo
-          echo Device: RedMagic 11 Air (NX799J), sun / SM8750, Android 16 (API 36)
-          echo Manifest url: ${{ github.event.inputs.TWRP_MANIFEST_URL }}
-          echo Manifest branch: ${{ github.event.inputs.TWRP_MANIFEST_BRANCH }}
-          echo Device tree url: ${{ github.event.inputs.DEVICE_TREE_URL }}
-          echo Device tree branch: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}
-          echo Device path: ${{ github.event.inputs.DEVICE_PATH }}
-          echo Device name: ${{ github.event.inputs.DEVICE_NAME }}
-          echo Lunch target: twrp_${{ env.LUNCH_TARGET }}
-          echo Build target: ${{ github.event.inputs.BUILD_PARTITION }}.img
-          echo Build date: `date`
+          echo "Device: RedMagic 11 Air (NX799J), sun / SM8750, Android 16 (API 36)"
+          echo "Manifest url: ${{ github.event.inputs.TWRP_MANIFEST_URL }}"
+          echo "Manifest branch: ${{ github.event.inputs.TWRP_MANIFEST_BRANCH }}"
+          echo "Device tree url: ${{ github.event.inputs.DEVICE_TREE_URL }}"
+          echo "Device tree branch: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
+          echo "Device path: ${{ github.event.inputs.DEVICE_PATH }}"
+          echo "Device name: ${{ github.event.inputs.DEVICE_NAME }}"
+          echo "Lunch target: twrp_${{ env.LUNCH_TARGET }}"
+          echo "Build target: ${{ github.event.inputs.BUILD_PARTITION }}.img"
+          echo "Build date: $(date)"
           echo
           echo EOF
         } >> "$GITHUB_ENV"
