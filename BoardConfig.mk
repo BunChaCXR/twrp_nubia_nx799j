@@ -135,14 +135,13 @@ TW_INCLUDE_FBE_METADATA_DECRYPT := true
 BOARD_USES_QCOM_FBE_DECRYPTION := true
 BOARD_USES_METADATA_PARTITION := true
 TW_USE_FSCRYPT_POLICY := 2
-# FBE v2 + inlinecrypt_optimized + wrappedkey_v0 on Qualcomm:
-# key unlock goes through the QTI Keymaster 4.0 HIDL service shipped in the
-# recovery ramdisk (vendor/bin/hw), started from init.recovery.qcom.rc.
+# FBE v2 + ICE + wrappedkey_v0 on Qualcomm (SM8750, sun):
+# recovery.fstab declares fileencryption=ice,wrappedkey so TWRP takes the
+# hardware-wrapped-key path (ask keymaster/keymint for the key) instead of
+# deriving a software fscrypt key.
 TW_CRYPTO_FS_TYPE := "ext4"
 TW_CRYPTO_REAL_BLKDEV := "/dev/block/by-name/userdata"
 TW_CRYPTO_DEFAULT_MNT_LEN := 2
-TW_CRYPTO_USE_SYSTEM_VOLD := true
-TW_CRYPTO_SYSTEM_VOLD_DEBUG := true
 PLATFORM_VERSION := 99.87.36
 PLATFORM_VERSION_LAST_STABLE := $(PLATFORM_VERSION)
 PLATFORM_SECURITY_PATCH := 2099-12-31
