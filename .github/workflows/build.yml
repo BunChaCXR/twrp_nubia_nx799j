@@ -144,6 +144,13 @@ jobs:
         type lunch 2>&1 | head -3
         export ALLOW_MISSING_DEPENDENCIES=true
         export SKIP_ABI_CHECKS=true
+        # OrangeFox fox_16.0 ships system/sepolicy/vendor/hal_hwcrypto_default.te
+        # that references the hal_hwcrypto_server attribute; when the paired AOSP
+        # public attributes do not declare it, drop that single te file.
+        if [ -f system/sepolicy/vendor/hal_hwcrypto_default.te ] && ! grep -rq "hal_hwcrypto_server" system/sepolicy/public/ 2>/dev/null; then
+          rm -f system/sepolicy/vendor/hal_hwcrypto_default.te
+          echo "dropped hal_hwcrypto_default.te"
+        fi
         export TARGET_SKIP_ABI_CHECKS=true
         export CCACHE_DIR=.ccache
         export CCACHE_EXEC=$(command -v ccache)
