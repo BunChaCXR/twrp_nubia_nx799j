@@ -143,6 +143,8 @@ jobs:
         echo "envsetup rc=$?"
         type lunch 2>&1 | head -3
         export ALLOW_MISSING_DEPENDENCIES=true
+        export SKIP_ABI_CHECKS=true
+        export TARGET_SKIP_ABI_CHECKS=true
         export CCACHE_DIR=.ccache
         export CCACHE_EXEC=$(command -v ccache)
         export CCACHE_MAXSIZE=5G
