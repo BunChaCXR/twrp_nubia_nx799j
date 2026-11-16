@@ -146,7 +146,14 @@ jobs:
         export USE_CCACHE=1
         export FOX_BUILD_DEVICE=${{ github.event.inputs.DEVICE_NAME }}
         export FOX_VERSION=R12.0
-        lunch twrp_${{ env.LUNCH_TARGET }} || lunch twrp_${{ env.LUNCH_TARGET }}-bp2a-eng || lunch twrp_${{ env.LUNCH_TARGET }}-eng
+        set +e
+        for t in twrp_${{ env.LUNCH_TARGET }}-ap3a-eng twrp_${{ env.LUNCH_TARGET }} twrp_${{ env.LUNCH_TARGET }}-bp2a-eng twrp_${{ env.LUNCH_TARGET }}-eng; do
+          echo "== trying lunch $t"
+          lunch "$t" && break
+        done
+        set -e
+        echo "TARGET_PRODUCT=$TARGET_PRODUCT TARGET_BUILD_VARIANT=$TARGET_BUILD_VARIANT"
+        test -n "$TARGET_PRODUCT" 
         (while true; do echo `date +%T` "Building TWRP..."; free -h; sleep 10; done) &
         TIP_PID=$!
         m ${{ github.event.inputs.BUILD_PARTITION }}image
