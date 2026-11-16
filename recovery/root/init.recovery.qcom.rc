@@ -97,3 +97,10 @@ on post-fs
     write /sys/class/leds/aw22xxx_led/trigger battery-charging-or-full
     # PMIC vibrator LED trigger
     write /sys/class/leds/vibrator/trigger transient
+
+# OrangeFox (fox_16.0) reads /dev/input before ueventd finishes chown; force
+# input node ownership/permissions and leave a trace in /tmp for adb inspection.
+on boot
+    write /proc/sys/kernel/printk 7
+    exec -- /system/bin/sh -c "for d in /dev/input/event*; do chown system input $d 2>/dev/null; chmod 0660 $d 2>/dev/null; done; chmod 0777 /dev/input 2>/dev/null"
+    exec -- /system/bin/sh -c "cat /proc/bus/input/devices > /tmp/input_devices.txt 2>&1; ls -l /dev/input >> /tmp/input_devices.txt 2>&1"
