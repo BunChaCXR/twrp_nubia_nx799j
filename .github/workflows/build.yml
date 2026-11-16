@@ -138,7 +138,10 @@ jobs:
 
     - name: Build TWRP recovery image
       run: |
+        set +e
         source build/envsetup.sh
+        echo "envsetup rc=$?"
+        type lunch 2>&1 | head -3
         export ALLOW_MISSING_DEPENDENCIES=true
         export CCACHE_DIR=.ccache
         export CCACHE_EXEC=$(command -v ccache)
