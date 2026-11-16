@@ -56,3 +56,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/init.recovery.qcom.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.qcom.rc \
     $(DEVICE_PATH)/recovery/root/init.recovery.usb.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.usb.rc
+
+# Prebuilt magiskboot from magisk-prebuilt uses 4K segment alignment.
+# sun is a 4K-page device, so skip the 16K max-page-size ELF prebuilt check.
+PRODUCT_CHECK_PREBUILT_MAX_PAGE_SIZE := false
