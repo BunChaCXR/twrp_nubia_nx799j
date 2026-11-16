@@ -151,6 +151,10 @@ jobs:
           rm -f system/sepolicy/vendor/hal_hwcrypto_default.te
           echo "dropped hal_hwcrypto_default.te"
         fi
+        if [ -f system/sepolicy/vendor/file_contexts ]; then
+          sed -i '/hal_hwcrypto_default/d' system/sepolicy/vendor/file_contexts
+          echo "stripped hal_hwcrypto_default from vendor file_contexts"
+        fi
         export TARGET_SKIP_ABI_CHECKS=true
         export CCACHE_DIR=.ccache
         export CCACHE_EXEC=$(command -v ccache)
