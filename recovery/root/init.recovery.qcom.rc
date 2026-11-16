@@ -26,6 +26,8 @@
 # the 2026-10-23 local probe archive.
 
 on init
+    start vendor.qseecomd
+    start vendor.keymaster-4-0
     start vendor.boot-qti
     setprop prepdecrypt.setpatch true
 
@@ -96,3 +98,11 @@ on post-fs
     write /sys/class/leds/aw22xxx_led/trigger battery-charging-or-full
     # PMIC vibrator LED trigger
     write /sys/class/leds/vibrator/trigger transient
+
+# QTI Keymaster 4.0 HIDL service, required for TWRP FBE wrappedkey unlock
+service vendor.keymaster-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-service-qti
+    class hal
+    user root
+    group root drmrpc
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/odm/lib64:/system/lib64:/sbin
+    seclabel u:r:recovery:s0

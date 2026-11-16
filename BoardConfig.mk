@@ -136,10 +136,8 @@ BOARD_USES_QCOM_FBE_DECRYPTION := true
 BOARD_USES_METADATA_PARTITION := true
 TW_USE_FSCRYPT_POLICY := 2
 # FBE v2 + inlinecrypt_optimized + wrappedkey_v0 on Qualcomm:
-# route unlock through the system vold/keymaster stack bundled in TWRP ramdisk.
-TW_CRYPTO_USE_SYSTEM_VOLD := true
-TW_CRYPTO_USE_SYSTEM_VOLD_DEBUG := true
-TARGET_KEYMASTER_RECURSIVE_ACL := true
+# key unlock goes through the QTI Keymaster 4.0 HIDL service shipped in the
+# recovery ramdisk (vendor/bin/hw), started from init.recovery.qcom.rc.
 TW_CRYPTO_FS_TYPE := "ext4"
 TW_CRYPTO_REAL_BLKDEV := "/dev/block/by-name/userdata"
 TW_CRYPTO_DEFAULT_MNT_LEN := 2
