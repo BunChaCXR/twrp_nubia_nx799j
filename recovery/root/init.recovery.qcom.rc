@@ -99,7 +99,8 @@ on post-fs
     write /sys/class/leds/vibrator/trigger transient
 
 # OrangeFox (fox_16.0) input bring-up: blacklist pseudo devices, fix perms.
-on boot
+# Must run before the recovery binary scans /dev/input, hence 'on init'.
+on init
     exec -- /system/bin/sh /system/bin/fix_input.sh
 
 service diaglog /system/bin/sh /system/bin/diaglog.sh
