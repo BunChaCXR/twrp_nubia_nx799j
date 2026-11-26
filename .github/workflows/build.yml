@@ -1,4 +1,4 @@
-name: TWRP 16 Builder - NX799J (RedMagic 11 Air)
+name: TWRP 16 Builder - NX799J (RedMagic 11 Air) + Air blobs
 
 on:
   workflow_dispatch:
@@ -122,6 +122,18 @@ jobs:
           || git clone "$TREE_URL" "device/${{ github.event.inputs.DEVICE_PATH }}"
         ls -l "device/${{ github.event.inputs.DEVICE_PATH }}"/BoardConfig.mk
 
+    - name: Apply RedMagic 11 Air blobs (air_blobs.zip)
+      run: |
+        D="device/${{ github.event.inputs.DEVICE_PATH }}"
+        if [ ! -f "$D/air_blobs.zip" ]; then
+          echo "::error::Khong thay air_blobs.zip trong repo. Hay tai file nay len thu muc goc cua repo."
+          exit 1
+        fi
+        unzip -o "$D/air_blobs.zip" -d "$D"
+        echo "== Da chep blob cua Air vao cay:"
+        head -3 "$D/AIR_BLOBS_MANIFEST.txt"
+        echo "So file: $(grep -c recovery/ "$D/AIR_BLOBS_MANIFEST.txt")"
+
     - name: Generate build info
       run: |
         echo -e "$BUILD_INFO" >> INFO.txt
@@ -177,6 +189,20 @@ jobs:
         cp "$BUILT" "$FINAL"
         ls -lh "$FINAL"
         kill $TIP_PID || true
+
+    - name: Check AVB footer (recovery la phan vung CHAIN, thieu footer = khong boot)
+      run: |
+        IMG="out/target/product/${{ github.event.inputs.DEVICE_NAME }}/TWRP-16.0-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}.img"
+        ls -l "$IMG"
+        test "$(stat -c %s "$IMG")" -le 104857600 || { echo "::error::Image lon hon phan vung recovery (100 MB)"; exit 1; }
+        AVB=$(ls out/host/linux-x86/bin/avbtool external/avb/avbtool.py 2>/dev/null | head -1)
+        if [ -n "$AVB" ]; then
+          python3 "$AVB" info_image --image "$IMG" 2>/dev/null | tee avb_info.txt || "$AVB" info_image --image "$IMG" | tee avb_info.txt
+          grep -q "Partition Name:.*recovery" avb_info.txt || { echo "::error::Thieu AVB footer cho phan vung recovery"; exit 1; }
+        else
+          tail -c 64 "$IMG" | head -c 4 | grep -q AVBf || { echo "::error::Thieu AVB footer"; exit 1; }
+          echo "Co AVB footer (kiem tra nhanh)"
+        fi
 
     - name: Upload build artifact (always downloadable from Actions)
       uses: actions/upload-artifact@v4
